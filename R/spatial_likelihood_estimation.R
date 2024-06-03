@@ -24,6 +24,8 @@ if (threads!=1) {
    message("Cluster type ", cluster.type)
    if (identical(cluster.type, "SOCK")) {
    hosts <- rep("localhost",threads)
+   message("threads: ", threads)
+   message("length(hosts: ", length(hosts))
    cat("making cluster localhost\n")
    message("hosts: ", hosts)
    mycl <- parallel::makeCluster(hosts, type=cluster.type)
