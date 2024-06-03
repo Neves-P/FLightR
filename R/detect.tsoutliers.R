@@ -76,7 +76,7 @@ otypes <- c("AO", "TC", "LS")
 
 mo2 <- tsoutliers::locate.outliers.oloop(.Lons.ts, fit, types = otypes, maxit=100)
 
-# if 
+# if
 
  Cval=3.5
  if (nrow(mo2$outliers)<length(Lons)*0.075) {
@@ -84,16 +84,16 @@ mo2 <- tsoutliers::locate.outliers.oloop(.Lons.ts, fit, types = otypes, maxit=10
  while(nrow(mo2$outliers)<length(Lons)*0.075) {
  Cval=Cval*0.95
  mo2 <- tsoutliers::locate.outliers.oloop(.Lons.ts, fit, types = otypes, maxit=100, cval=Cval)
- } 
+ }
  message("cval adjusted to", Cval, "\n")
  }
- 
+
  if (nrow(mo2$outliers)>length(Lons)*max.outlier.proportion) {
  message("adjusting cval up\n")
  while(nrow(mo2$outliers)>length(Lons)*max.outlier.proportion) {
  Cval=Cval*1.05
  mo2 <- tsoutliers::locate.outliers.oloop(.Lons.ts, fit, types = otypes, maxit=100, cval=Cval)
- } 
+ }
  message("cval adjusted to", Cval, "\n")
  }
 
@@ -115,7 +115,7 @@ graphics::abline(v=Outliers1$ind[Outliers1$type=="TC"], col="brown")
 return(Outliers1_c)
 }
 
-detect.tsoutliers<-function(calibration, Proc.data, plot=TRUE, Threads=NULL, max.outlier.proportion=0.2, simple.version=FALSE) {
+detect.tsoutliers<-function(calibration, Proc.data, plot=TRUE, Threads=NULL, max.outlier.proportion=0.2, simple.version=FALSE, cluster.type = "PSOCK") {
 if (!requireNamespace("tsoutliers", quietly = TRUE)) {
     stop("Pkg tsoutliers needed for this function to work. Please install it.",
       call. = FALSE)
@@ -123,23 +123,23 @@ if (!requireNamespace("tsoutliers", quietly = TRUE)) {
 if (is.character(Proc.data)) Proc.data=get("Proc.data")
 if (is.character(calibration)) calibration=get("calibration")
 if (plot) {
-oldpar <- graphics::par(no.readonly = TRUE)    
-on.exit(graphics::par(oldpar))         
+oldpar <- graphics::par(no.readonly = TRUE)
+on.exit(graphics::par(oldpar))
 }
 #calibration$Parameters$log.irrad.borders<-c(-4.5, 4.5)
 
 if (!is.null(Threads)) {
 	message("making cluster\n")
-	mycl <- parallel::makeCluster(Threads)
+	mycl <- parallel::makeCluster(Threads, cluster.type="PSOCK")
 	tmp<-parallel::clusterSetRNGStream(mycl)
     tmp<-parallel::clusterExport(mycl,c("calibration", "Proc.data"), envir=environment())
 	message("estimating dusk errors projection on equator\n")
-	
+
 	Dusks<-1:(dim(Proc.data$Twilight.time.mat.dusk)[2])
 	tryCatch(Lons.dusk<-parallel::parSapply(mycl, Dusks, FUN=function(x) get.equatorial.max(Proc.data, calibration, dusk=TRUE, x)), finally = parallel::stopCluster(mycl))
-	
+
 	message("estimating dawn errors projection on equator\n")
-	
+
 	Dawns<-1:(dim(Proc.data$Twilight.time.mat.dawn)[2])
 	tryCatch(Lons.dawn<-parallel::parSapply(mycl, Dawns, FUN=function(x) get.equatorial.max(Proc.data, calibration, dusk=FALSE, x)), finally = parallel::stopCluster(mycl))
 	parallel::stopCluster(mycl)
@@ -204,7 +204,7 @@ Res=list(outliers=outliers, center=Predict[outliers])
 return(Res)
 }
 
-# first we want to eclude obvious outliers 
+# first we want to eclude obvious outliers
 # wwe will do less then
 
 Dusk.obvious.outliers<-which(tsoutliers.test(Lons.dusk)>1.5)
@@ -228,7 +228,7 @@ if (length(Problematic.Dusks$outliers) >0| length(Problematic.Dawns$outliers)>0)
 	Lons.dusk_short<-((Lons.dusk_short+Delta_cur_dusk)%%360)-Delta_cur_dusk
 	Lons.dusk[Problematic.Dusks$outliers]<-Lons.dusk_short
 	}
-	
+
 	if (length(Problematic.Dawns$outliers) >0) {
 	message("reestimating dawn errors projection on equator\n")
 	Dawns<-cbind(Problematic.Dawns$outliers, ((Problematic.Dawns$center+Delta_cur_dawn)%%360)-Delta_cur_dawn)
