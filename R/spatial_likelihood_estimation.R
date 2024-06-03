@@ -24,8 +24,12 @@ if (threads!=1) {
    message("Cluster type ", cluster.type)
    if (identical(cluster.type, "SOCK")) {
    hosts <- rep("localhost",threads)
+   cat("making cluster localhost\n")
+   message("hosts: ", hosts)
    mycl <- parallel::makeCluster(hosts, type=cluster.type)
    } else {
+     cat("making cluster threads\n")
+     message("hosts: ", threads)
    mycl <- parallel::makeCluster(threads, type=cluster.type)
    }
    tmp<-parallel::clusterSetRNGStream(mycl)
