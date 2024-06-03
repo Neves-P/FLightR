@@ -197,7 +197,8 @@ Phys.Mat<-get.Phys.Mat.parallel(all.in, Proc.data$Twilight.time.mat.dusk,
                               Proc.data$Twilight.log.light.mat.dusk,
 							  Proc.data$Twilight.time.mat.dawn,
 							  Proc.data$Twilight.log.light.mat.dawn,
-							  threads=Threads, calibration=all.in$Calibration)
+							  threads=Threads, calibration=all.in$Calibration,
+							  cluster.type = "PSOCK")
 
 all.in$Spatial$Phys.Mat<-Phys.Mat
 

@@ -69,13 +69,13 @@ known.coord <- c(-93.4, 35.2)
 ################################################
 
 ##----------------------------------------------
-##   Search for a proper calibration period 
+##   Search for a proper calibration period
 ##   and manual check of outliers
 ##----------------------------------------------
 
 ## we need to select days when bird was in a known location
 ## these are typically days in the beginning or in the end
-## of migration. To do we first will plot all sun slopes over 
+## of migration. To do we first will plot all sun slopes over
 ## the whole period and then will decide when is our calibration period
 
 ## Dusk
@@ -98,7 +98,7 @@ Twilight.log.light.mat.Calib.dawn<-Proc.data$Twilight.log.light.mat.dawn
 # this is especially important for the nest box or cavity breeders.
 # the abnormally fast twilights corresponding to twilight missed inside a cavity should be excluded..
 
-Calib.data.all<-logger.template.calibration(Twilight.time.mat.Calib.dawn, Twilight.log.light.mat.Calib.dawn, Twilight.time.mat.Calib.dusk, Twilight.log.light.mat.Calib.dusk, positions=known.coord, log.light.borders=log(c(2, 64)),  log.irrad.borders=c(-1000, 1000), plot.each=F, plot.final=T) 
+Calib.data.all<-logger.template.calibration(Twilight.time.mat.Calib.dawn, Twilight.log.light.mat.Calib.dawn, Twilight.time.mat.Calib.dusk, Twilight.log.light.mat.Calib.dusk, positions=known.coord, log.light.borders=log(c(2, 64)),  log.irrad.borders=c(-1000, 1000), plot.each=F, plot.final=T)
 
 # plot=T - will plot al the twilights and you might exclude weird ones.
 # plot=F will just go to the end without manual check possibility
@@ -134,7 +134,7 @@ Dawn.calib.days<-which(as.POSIXct(Proc.data$Twilight.time.mat.dawn[1,], tz="UTC"
 Twilight.time.mat.Calib.dawn<-Proc.data$Twilight.time.mat.dawn[,Dawn.calib.days]
 Twilight.log.light.mat.Calib.dawn<-Proc.data$Twilight.log.light.mat.dawn[,Dawn.calib.days ]
 
-Calib.data.all<-logger.template.calibration(Twilight.time.mat.Calib.dawn, Twilight.log.light.mat.Calib.dawn, Twilight.time.mat.Calib.dusk, Twilight.log.light.mat.Calib.dusk, positions=known.coord,log.light.borders=log(c(2, 64)),  log.irrad.borders=c(-50, 50), plot=F) 
+Calib.data.all<-logger.template.calibration(Twilight.time.mat.Calib.dawn, Twilight.log.light.mat.Calib.dawn, Twilight.time.mat.Calib.dusk, Twilight.log.light.mat.Calib.dusk, positions=known.coord,log.light.borders=log(c(2, 64)),  log.irrad.borders=c(-50, 50), plot=F)
 Calib.data.all<-Calib.data.all[[1]]
 All.slopes<-get.calib.param(Calib.data.all, plot=F)
 
@@ -142,8 +142,8 @@ plot(log(All.slopes$Slopes$Slope)~All.slopes$Slopes$Time)
 
 # Now we create 'parameters' object that will have all the details about the calibration
 Parameters<-All.slopes$Parameters # LogSlope -0.22 0.5
-Parameters$measurement.period<-Proc.data$measurement.period 
-Parameters$saving.period<-Proc.data$saving.period 
+Parameters$measurement.period<-Proc.data$measurement.period
+Parameters$saving.period<-Proc.data$saving.period
 Parameters$log.light.borders<-log(c(2, 64)) # these are the boundaries in which one should use the BAS tag.. for the other types of tags they will be different.
 Parameters$min.max.values<-c(min(FLightR.data$Data$light), max(FLightR.data$Data$light))
 Parameters$log.irrad.borders=c(-50, 50)
@@ -208,7 +208,7 @@ Dawn.calib.days<-which(as.POSIXct(Proc.data$Twilight.time.mat.dawn[1,], tz="UTC"
 Twilight.time.mat.Calib.dawn<-Proc.data$Twilight.time.mat.dawn[,Dawn.calib.days]
 Twilight.log.light.mat.Calib.dawn<-Proc.data$Twilight.log.light.mat.dawn[,Dawn.calib.days ]
 
-Calib.data.all<-logger.template.calibration(Twilight.time.mat.Calib.dawn, Twilight.log.light.mat.Calib.dawn, Twilight.time.mat.Calib.dusk, Twilight.log.light.mat.Calib.dusk, positions=known.coord,log.light.borders=log(c(2, 64)),  log.irrad.borders=c(-50, 50), plot=F) 
+Calib.data.all<-logger.template.calibration(Twilight.time.mat.Calib.dawn, Twilight.log.light.mat.Calib.dawn, Twilight.time.mat.Calib.dusk, Twilight.log.light.mat.Calib.dusk, positions=known.coord,log.light.borders=log(c(2, 64)),  log.irrad.borders=c(-50, 50), plot=F)
 Calib.data.all<-Calib.data.all[[1]]
 
 All.slopes<-get.calib.param(Calib.data.all, plot=T)
@@ -229,8 +229,8 @@ plot(log(All.slopes$Slopes$Slope)~All.slopes$Slopes$Time)
 ##########
 # Now we create 'parameters' object that will have all the details about the calibration
 Parameters<-All.slopes$Parameters # LogSlope -0.31 0.29
-Parameters$measurement.period<-Proc.data$measurement.period 
-Parameters$saving.period<-Proc.data$saving.period 
+Parameters$measurement.period<-Proc.data$measurement.period
+Parameters$saving.period<-Proc.data$saving.period
 Parameters$log.light.borders<-log(c(2, 64)) # these are the boundaries in which one should use the BAS tag.. for the other types of tags they will be different.
 Parameters$min.max.values<-c(min(FLightR.data$Data$light), max(FLightR.data$Data$light))
 Parameters$log.irrad.borders=c(-50, 50)
@@ -269,7 +269,7 @@ Calibration$lat_correction_fun<-lat_correction_fun
 ##  Part 3. Define spatial extent for the optimisation   ##
 ###########################################################
 
-# we will define just  a box, 
+# we will define just  a box,
 # but one could use any other more complicated shape
 
 xlim = c(-120, -80)
@@ -291,16 +291,16 @@ abline(h=known.coord[2])
 Points.Land<-cbind(All.Points.Focus, Land=1)
 # the masks work in a follwing way:
 #
-# Spatial constrain: if one wants to prevent animal being at this point at twilight 
+# Spatial constrain: if one wants to prevent animal being at this point at twilight
 # the point should just be excluded
-# 
+#
 # Spatiobehavioural constrain: if you do allow to be flying at the point but not be stationary
 # then set Land=0 for this point
 
 ##########################################################
 ## Part 4. Preestimation of all the matrices           ##
 ##########################################################
- 
+
 raw.Y.dusk<-correct.hours(FLightR.data$twilights$datetime[FLightR.data$twilights$type==2 & FLightR.data$twilights$excluded==0])
 raw.X.dusk<-as.numeric(FLightR.data$twilights$datetime[FLightR.data$twilights$type==2 & FLightR.data$twilights$excluded==0])
 Data_tmp<-list(d=FLightR.data$Data)
@@ -332,7 +332,7 @@ Calibration$Parameters$log.irrad.borders<-c(-12, 5)
 # with the current example it takes about 5 min at 24 core workstation
 
 Threads= detectCores()-1
-Phys.Mat<-get.Phys.Mat.parallel(all.in, Proc.data$Twilight.time.mat.dusk, Proc.data$Twilight.log.light.mat.dusk, Proc.data$Twilight.time.mat.dawn, Proc.data$Twilight.log.light.mat.dawn,  threads=Threads, calibration=Calibration)
+Phys.Mat<-get.Phys.Mat.parallel(all.in, Proc.data$Twilight.time.mat.dusk, Proc.data$Twilight.log.light.mat.dusk, Proc.data$Twilight.time.mat.dawn, Proc.data$Twilight.log.light.mat.dawn,  threads=Threads, calibration=Calibration, cluster.type="PSOCK")
 
 all.in$Phys.Mat<-Phys.Mat
 
@@ -367,10 +367,10 @@ save(all.in, file="all.in.RData")
 Threads= detectCores()-1
 # do not forget about RAM - each node will eat 2 - 2.5 Gb of Ram!!!
 
-Result<-run.particle.filter(all.in, save.Res=F, cpus=min(Threads,6), nParticles=1e6, known.last=T, precision.sd=25, sea.value=1, save.memory=T, k=NA, parallel=T, 
- plot=T, prefix="pf", extend.prefix=T, max.kappa=100, 
- min.SD=25, min.Prob=0.01, max.Prob=0.99, 
- fixed.parameters=list(M.mean=300, M.sd=500, Kappa=0), 
+Result<-run.particle.filter(all.in, save.Res=F, cpus=min(Threads,6), nParticles=1e6, known.last=T, precision.sd=25, sea.value=1, save.memory=T, k=NA, parallel=T,
+ plot=T, prefix="pf", extend.prefix=T, max.kappa=100,
+ min.SD=25, min.Prob=0.01, max.Prob=0.99,
+ fixed.parameters=list(M.mean=300, M.sd=500, Kappa=0),
  cluster.type="SOCK", a=45, b=1500, L=90, update.angle.drift=F, adaptive.resampling=0.99, save.transitions=T, check.outliers=F)
 gc()
 
@@ -443,7 +443,7 @@ pdf("FLightR_lat_lon.pdf",width=5,height=5)
 
 par(mfrow=c(2,1))
 par(mar=c(2,4,3,1),cex=1)
- Sys.setlocale("LC_ALL", "English")  
+ Sys.setlocale("LC_ALL", "English")
 
  #Longitude
 plot(Quantiles$Medianlon~Quantiles$Time, las=1,col=grey(0.1),pch=16,ylab="Longitude",xlab="",lwd=2, ylim=range(c( Quantiles$LCI.lon, Quantiles$UCI.lon )), type="n")

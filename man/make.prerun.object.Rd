@@ -16,7 +16,8 @@ make.prerun.object(
   Kappa = 0,
   M.mean = 300,
   M.sd = 500,
-  likelihood.correction = TRUE
+  likelihood.correction = TRUE,
+  cluster.type = "PSOCK"
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ make.prerun.object(
 \item{M.sd}{Prior for sd of distance travelled between consecutive twilights, the higher the value is the wider is the the distribution}
 
 \item{likelihood.correction}{Should likelihood correction estimated during \code{\link{make.calibration}} run be used?}
+
+\item{cluster.type}{see help to package parallel for details}
 }
 \value{
 Object to be uses in the \code{\link{run.particle.filter}}
@@ -57,12 +60,12 @@ Proc.data<-get.tags.data(File, end.date=as.POSIXct('2013-07-02', tz='GMT'))
 Calibration.periods<-data.frame(
        calibration.start=NA,
        calibration.stop=as.POSIXct("2013-08-20", tz='GMT'),
-       lon=5.43, lat=52.93) 
+       lon=5.43, lat=52.93)
        #use c() also for the geographic coordinates, if you have more than one calibration location
        # (e. g.,  lon=c(5.43, 6.00), lat=c(52.93,52.94))
 print(Calibration.periods)
 
-# NB Below likelihood.correction is set to FALSE for fast run! 
+# NB Below likelihood.correction is set to FALSE for fast run!
 # Leave it as default TRUE for real examples
 Calibration<-make.calibration(Proc.data, Calibration.periods, likelihood.correction=FALSE)
 
