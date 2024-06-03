@@ -2,7 +2,7 @@
 # functions used during the main run
 
 #' Run Particle Filter
-#' 
+#'
 #' Main function of FLightR, it takes fully prepared object created by \code{\link{make.prerun.object}} and produces a result object that can be used for plotting etc.
 #' @param all.out An object created by \code{\link{make.prerun.object}}.
 #' @param threads An amount of threads to use while running in parallel. default is -1. if value 1 submitted package will run sequentially
@@ -18,11 +18,11 @@
 #' @param b Maximum distance allowed to fly between two consecutive twilights
 #' @param L how many consecutive particles to resample
 #' @param adaptive.resampling Above what level of ESS resampling should be skipped
-#' @param check.outliers switches ON the online outlier routine 
+#' @param check.outliers switches ON the online outlier routine
 #' @param sink2file will write run details in a file instead of showing on the screen
 #' @param add.jitter will add spatial jitter inside a grid cell for the median estimates
-#' @return FLightR object, containing output and extracted results. It is a list with the following elements 
-#' 
+#' @return FLightR object, containing output and extracted results. It is a list with the following elements
+#'
 #'    \item{Indices}{List with prior information and indices}
 #'    \item{Spatial}{Spatial data - Grid, Mask, spatial likelihood}
 #'    \item{Calibration}{all calibration parameters}
@@ -45,15 +45,15 @@
 #' Calibration.periods<-data.frame(
 #'        calibration.start=NA,
 #'        calibration.stop=as.POSIXct("2013-08-20", tz='GMT'),
-#'        lon=5.43, lat=52.93) 
+#'        lon=5.43, lat=52.93)
 #'        #use c() also for the geographic coordinates, if you have more than one calibration location
 #'        # (e. g.,  lon=c(5.43, 6.00), lat=c(52.93,52.94))
 #' print(Calibration.periods)
-#' 
-#' # NB Below likelihood.correction is set to FALSE for fast run! 
+#'
+#' # NB Below likelihood.correction is set to FALSE for fast run!
 #' # Leave it as default TRUE for real examples
 #' Calibration<-make.calibration(Proc.data, Calibration.periods, likelihood.correction=FALSE)
-#' 
+#'
 #' Grid<-make.grid(left=0, bottom=50, right=10, top=56,
 #'   distance.from.land.allowed.to.use=c(-Inf, Inf),
 #'   distance.from.land.allowed.to.stay=c(-Inf, Inf))
@@ -74,25 +74,30 @@ run.particle.filter<-function(all.out, cpus=NULL, threads=-1, nParticles=1e6, kn
       warning("use threads instead of cpus! cpus will be supressed in the newer versions\n")
       threads<-cpus
    }
-   
+
    	all.out$Results<-list()
     all.out$Results$SD<-vector(mode = "double")
     all.out$Results$LL<-vector(mode = "double")
 
-  
+
    if (threads!=1){
    parallel=TRUE
    Possible.threads=parallel::detectCores()
    if (threads<=0) Threads=max(Possible.threads+threads, 1)
    if (threads>0) Threads=min(Possible.threads,threads)
     message("creating cluster with", Threads, "threads")
-    mycl <- parallel::makeCluster(Threads, type=cluster.type)
+    if (identical(cluster.type, "SOCK")) {
+      hosts <- rep("localhost",Threads)
+      mycl <- parallel::makeCluster(hosts, type=cluster.type)
+    } else {
+      mycl <- parallel::makeCluster(Threads, type=cluster.type)
+    }
     parallel::clusterSetRNGStream(mycl)
-	parallel::clusterEvalQ(mycl, library("FLightR")) 
+	parallel::clusterEvalQ(mycl, library("FLightR"))
 	message('   Done\n')
 
     tryCatch(Res<- pf.run.parallel.SO.resample(in.Data=all.out, threads=Threads, nParticles=nParticles, known.last=known.last, precision.sd=precision.sd, behav.mask.low.value=behav.mask.low.value, k=k, parallel=parallel, plot=FALSE, existing.cluster=mycl, cluster.type=cluster.type, a=a, b=b, L=L, sink2file=sink2file, adaptive.resampling=adaptive.resampling, RStudio=FALSE, check.outliers=check.outliers), finally = parallel::stopCluster(mycl))
-	} else {	
+	} else {
 	mycl=NA
     parallel=FALSE
     Res<- pf.run.parallel.SO.resample(in.Data=all.out, threads=Threads, nParticles=nParticles, known.last=known.last, precision.sd=precision.sd, behav.mask.low.value=behav.mask.low.value, k=k, parallel=parallel, plot=FALSE, existing.cluster=mycl, cluster.type=cluster.type, a=a, b=b, L=L, sink2file=sink2file, adaptive.resampling=adaptive.resampling, RStudio=FALSE, check.outliers=check.outliers)
@@ -109,19 +114,19 @@ run.particle.filter<-function(all.out, cpus=NULL, threads=-1, nParticles=1e6, kn
     #save(LL, file=paste(LL, "time", format(Sys.time(), "%H-%m"), ".RData"))
 	# Part 2b comparing the likelihood with previous estimate
     # now we need to save it..
-      
+
 
 	  # Part 3. Updating proposal
       message("estimating results object\n")
       all.out.old<-all.out
       all.out<- get.coordinates.PF(Res$Points, all.out, add.jitter=add.jitter)
       Movement.parameters<- estimate.movement.parameters(Res$Trans, all.out, fixed.parameters=NA, a=a, b=b, parallel=parallel, existing.cluster=mycl, nParticles=nParticles)
-	  
+
 	all.out$Results$Movement.results=Movement.parameters$Movement.results
-	all.out$Results$Transitions.rle=Movement.parameters$Transitions.rle	
-	
+	all.out$Results$Transitions.rle=Movement.parameters$Transitions.rle
+
 	  all.out$Results$LL<-LL
-	  
+
 	all.out$Results<-list(
 
         #Final.Means=cbind(all.out$Results$Final.Means[-1,],
@@ -143,7 +148,7 @@ run.particle.filter<-function(all.out, cpus=NULL, threads=-1, nParticles=1e6, kn
 	   lazy.result.plot(all.out)
     }
     gc()
-  
+
   all.out$Spatial$tmp<-NULL
   all.out$call<-cl
   all.out$Results$FLightRver<-utils::packageVersion("FLightR")
@@ -160,22 +165,22 @@ generate.points.dirs<-function(x , in.Data, Current.Proposal, a=45, b=500) {
   # nMoving
  # here is the important change for the mask started in vesion 3.0
  # the new idea is that we wnat to set probabilities of stop to 0 in case the bird is flying over the restricted habitat..
-  
+
   resample <- function(x, ...) x[sample.int(length(x), ...)]
-  
+
   #if (!is.null(in.Data$Spatial$tmp$dDistance))in.Data$Spatial$tmp$Distance<-attach.big.matrix(in.Data$Spatial$tmp$dDistance)
   #if (!is.null(in.Data$Spatial$tmp$dAzimuths))in.Data$Spatial$tmp$Azimuths<-attach.big.matrix(in.Data$Spatial$tmp$dAzimuths)
-  
+
   if (x[[3]]>0) {
 	# here is the addition of clever mask
 	#if (in.Data$Spatial$Grid[x[[1]],3]==0) x[[3]]=x[[2]]
 	# end of addition
-	#Dists.distr<-in.Data$Spatial$tmp$Distance[x[[1]],]	
+	#Dists.distr<-in.Data$Spatial$tmp$Distance[x[[1]],]
 	#Dists.distr<- sp::spDists(in.Data$Spatial$Grid[x[[1]], c(1,2), drop=FALSE] ,  in.Data$Spatial$Grid[,c(1,2)], longlat=TRUE)
 	Dists.distr <- sf::st_distance(
 	  sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[x[[1]], c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326),
 	  sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[, c(1,2)]),coords=c('lon','lat'),crs=4326))/1000
-	
+
     Dists.probs<-truncnorm::dtruncnorm(as.numeric(Dists.distr), a=a, b=b, Current.Proposal$M.mean, Current.Proposal$M.sd)
     ###
     #fields::image.plot(fields::as.image(Dists.probs, x=in.Data$Spatial$Grid, nrow=50, ncol=50))
@@ -183,14 +188,14 @@ generate.points.dirs<-function(x , in.Data, Current.Proposal, a=45, b=500) {
     if (Current.Proposal$Kappa>0) {
       #Angles.dir<-in.Data$Spatial$tmp$Azimuths[x[[1]],]
       Angles.dir<-geosphere::bearing(in.Data$Spatial$Grid[,c(1,2)], in.Data$Spatial$Grid[x[[1]], c(1,2), drop=FALSE])
-	  
+
       Angles.probs<-as.numeric(suppressWarnings(circular::dvonmises(Angles.dir/180*pi, mu=Current.Proposal$Direction/180*pi, kappa=Current.Proposal$Kappa)))
       Angles.probs[is.na(Angles.probs)]<-0
     }
     else {
       Angles.probs<-0.1591549
     }
-    # this is neede to catch an error 
+    # this is neede to catch an error
     if (any(c(Angles.probs, Dists.probs)<0)) {
       warning("PF produced weird probs \n")
       tmp.out<-list(Angles.probs=Angles.probs, Dists.probs=Dists.probs, Current.Proposal=Current.Proposal, Data=x)
@@ -213,8 +218,8 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
   if (sink2file & RStudio) sink()
   #### if save.rle=TRUE function will save a out.rle object in out.rle.RData file in working directory BUT to make it work There have to be out.rle column in Main.Index that will contain true for the twilights where results needed.
   ####
-  
-  if (any(in.Data$Spatial$Behav.mask!=1)) { 
+
+  if (any(in.Data$Spatial$Behav.mask!=1)) {
 	smart.filter=TRUE
 	message("smart filter is ON\n")
 	} else {
@@ -225,13 +230,18 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
   in.Data.short<-list(Indices=in.Data$Indices,  Spatial=in.Data$Spatial)
   in.Data.short$Spatial$Behav.mask<-NULL
   in.Data.short$Spatial$Phys.Mat<-NULL
-  
+
   Parameters<-list(in.Data=in.Data.short, a=a, b=b)
   #if (!is.null(Parameters$in.Data$Spatial$tmp$dDistance)) Parameters$in.Data$Spatial$tmp$Distance<-attach.big.matrix(Parameters$in.Data$Spatial$tmp$dDistance)
   #if (!is.null(Parameters$in.Data$Spatial$tmp$dAzimuths)) Parameters$in.Data$Spatial$tmp$Azimuths<-attach.big.matrix(Parameters$in.Data$Spatial$tmp$dAzimuths)
   if (parallel) {
     if (length(existing.cluster)==1) {
-      mycl <- parallel::makeCluster(threads, type=cluster.type)
+      if (identical(cluster.type, "SOCK")) {
+        hosts <- rep("localhost",threads)
+        mycl <- parallel::makeCluster(hosts, type=cluster.type)
+      } else {
+        mycl <- parallel::makeCluster(threads, type=cluster.type)
+      }
       parallel::clusterSetRNGStream(mycl)
       ### we don' need to send all parameters to node. so keep it easy..
       # cleaning dataset
@@ -244,11 +254,11 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
 	#}
 	#if (!is.null(in.Data$Spatial$tmp$dAzimuths))  parallel::clusterEvalQ(mycl, { Parameters$in.Data$Spatial$tmp$Azimuths <- attach.big.matrix(Parameters$in.Data$Spatial$tmp$dAzimuths);1})
   }
-  
-  
+
+
   #########################################
   # part from the main function
-  
+
   in.Data$Spatial$Behav.mask[in.Data$Spatial$Behav.mask<behav.mask.low.value]<-behav.mask.low.value
   in.Data$Spatial$Phys.Mat<-in.Data$Spatial$Phys.Mat*in.Data$Spatial$Behav.mask
   #=========================================
@@ -262,14 +272,14 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
   # stage 1. create burn-in set
   #Last.Particles<-rep(as.integer(in.Data$Spatial$start.point), nParticles)
   #Last.Last.Particles<-Last.Particles
-  
+
   # here I'll save results stack.
   #All.results
-  
+
   Results.stack<-as.matrix(rep(as.integer(in.Data$Spatial$start.point), nParticles))
-  
+
   Weights.stack<-as.matrix(rep(1/nParticles, nParticles))
-  
+
   New.weights<-rep(1/nParticles, nParticles)
   #All.results<-NULL
   in.Data$outliers<-c()
@@ -282,7 +292,7 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
 	  in.Data$Dif.ang-c()
 	  #in.Data$BC.mean<-c()
   }
-  
+
   propagate.particles<-function(Last.Particles, Current.Proposal, parallel=TRUE, Parameters, mycl) {
     Order.vector<-order(Last.Particles)
     Particles.rle<-bit::intrle(as.integer(Last.Particles[Order.vector]))
@@ -305,10 +315,10 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
     New.Particles<-unlist(New.Points)[sort.list(Order.vector, na.last = NA, method =  "quick")]
     return(New.Particles)
   }
-  
-  
-  ## for ver 1.6 
-  #Prev.Weights<-rep(1, nParticles) 
+
+
+  ## for ver 1.6
+  #Prev.Weights<-rep(1, nParticles)
   ResampleCount<-0
   steps.from.last<-2
   total_length<-nrow(in.Data$Indices$Main.Index)
@@ -321,22 +331,22 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
     #=======================================
     message("generating new particles")
     New.Particles<-propagate.particles(Last.Particles=Results.stack[,ncol(Results.stack)], Current.Proposal=Current.Proposal, parallel=parallel, Parameters=Parameters, mycl=mycl)
-    
+
     #=====================================================
-    # resampling step 
+    # resampling step
     # we need to estimate weights of resulting points and then resample them proportionally to weights..
     Current.Phys.Weights<-in.Data$Spatial$Phys.Mat[New.Particles,Time.Period]
-    
+
     if (!is.na(k) & Time.Period >1) {
       get.directional.weights<-function(in.Data, Last.Last.Particles, Last.Particles, New.Particles, k, parallel, mycl, D.kappa) {
         #===================================
         #Prev.Dirs<-in.Data$Spatial$tmp$Azimuths[cbind(Last.Last.Particles, Last.Particles)]/180*pi
-		
+
         Prev.Dirs<-apply(matrix(c(Last.Last.Particles, Last.Particles), ncol=2), 1, dir_fun, in.Data)/180*pi
-		
+
         #New.Dirs<-in.Data$Spatial$tmp$Azimuths[cbind(Last.Particles,New.Particles)]/180*pi
         New.Dirs<-apply(matrix(c(Last.Particles, New.Particles), ncol=2), 1, dir_fun, in.Data)/180*pi
-		
+
         FromTo=matrix(c(Prev.Dirs, New.Dirs), ncol=2)
         if (parallel) {Angles.probs<-parallel::parApply(mycl, FromTo, 1, flightr.dvonmises, mykap=k)
         } else {
@@ -345,7 +355,7 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
         Angles.probs[is.na(Angles.probs)]<-D.kappa
         return(Angles.probs)
       }
-      
+
       Angles.probs<-get.directional.weights(in.Data, Results.stack[,ncol(Results.stack)-1], Results.stack[,ncol(Results.stack)], New.Particles, k, parallel, mycl, D.kappa)
       Current.Weights<- Current.Phys.Weights*Angles.probs
     }
@@ -364,31 +374,31 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
 	if (Time.Period>2 & check.outliers) {
 	# here I want to try directiondl outliers..
 	# so we need to pick up particles that moved..
-	# 
+	#
 	#=================================================================
 
-	# AB.distance<-stats::weighted.mean(	sp::spDists(in.Data$Spatial$Grid[Results.stack[,(ncol(Results.stack)-1)], c(1,2), drop=FALSE], 
-	#                                                in.Data$Spatial$Grid[Results.stack[,ncol(Results.stack)], c(1,2), drop=FALSE], 
-	#                                                longlat=TRUE, diagonal=TRUE), 
+	# AB.distance<-stats::weighted.mean(	sp::spDists(in.Data$Spatial$Grid[Results.stack[,(ncol(Results.stack)-1)], c(1,2), drop=FALSE],
+	#                                                in.Data$Spatial$Grid[Results.stack[,ncol(Results.stack)], c(1,2), drop=FALSE],
+	#                                                longlat=TRUE, diagonal=TRUE),
 	#                                    Weights.stack[,ncol(Weights.stack)])
 
 	AB.distance <- stats::weighted.mean(sf::st_distance(
-	  sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[Results.stack[,(ncol(Results.stack)-1)], c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326), 
-	  sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[Results.stack[,ncol(Results.stack)], c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326))/1000, 
+	  sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[Results.stack[,(ncol(Results.stack)-1)], c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326),
+	  sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[Results.stack[,ncol(Results.stack)], c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326))/1000,
 	  Weights.stack[,ncol(Weights.stack)])
-	
-	# AC.distance2<-	stats::weighted.mean(sp::spDists(in.Data$Spatial$Grid[Results.stack[,(ncol(Results.stack)-1)], c(1,2), drop=FALSE], 
-	#                                                 in.Data$Spatial$Grid[New.Particles, c(1,2), drop=FALSE], 
-	#                                                 longlat=TRUE, 
-	#                                                 diagonal=TRUE), 
-	#                                     Weights.stack[,ncol(Weights.stack)]*Current.Weights)	
+
+	# AC.distance2<-	stats::weighted.mean(sp::spDists(in.Data$Spatial$Grid[Results.stack[,(ncol(Results.stack)-1)], c(1,2), drop=FALSE],
+	#                                                 in.Data$Spatial$Grid[New.Particles, c(1,2), drop=FALSE],
+	#                                                 longlat=TRUE,
+	#                                                 diagonal=TRUE),
+	#                                     Weights.stack[,ncol(Weights.stack)]*Current.Weights)
 	AC.distance2 <- stats::weighted.mean(sf::st_distance(
 	  sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[Results.stack[,(ncol(Results.stack)-1)], c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326),
 	  sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[New.Particles, c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326),
 	  by_element=TRUE
-	  )/1000, 
+	  )/1000,
 	  Weights.stack[,ncol(Weights.stack)]*Current.Weights)
-	
+
 	message("AB.distance:", round(AB.distance, 2), "\n")
 	message("AC.distance2:", round(AC.distance2, 2), "\n")
 
@@ -398,11 +408,11 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
 	# the AB ones wil have folowing..
 
 	BA.dir<-apply(Results.stack[,ncol(Results.stack):(ncol(Results.stack)-1), drop=FALSE], 1, dir_fun, in.Data)
-	
+
 	BA.moved<-which(!is.na(BA.dir))
 	BA.mean<-circular::mean.circular(circular::circular(resample(BA.dir[BA.moved], replace=TRUE,prob=Weights.stack[,ncol(Weights.stack)][BA.moved]), units="degrees"), na.rm=TRUE)
 	BC.dir<-apply(matrix(c(Results.stack[,ncol(Results.stack)], New.Particles), ncol=2), 1, dir_fun, in.Data)
-	
+
 	BC.moved<-which(!is.na(BC.dir))
 	BC.mean<-circular::mean.circular(circular::circular(resample(BC.dir[BC.moved], replace=TRUE, prob=(Weights.stack[,ncol(Weights.stack)]*Current.Weights)[BC.moved]), units="degrees"), na.rm=TRUE)
 	dif.ang<-function(x,y) {
@@ -416,8 +426,8 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
 	Dif.ang<-dif.ang(BA.mean, BC.mean)
 	message("anglular change", round(Dif.ang,2), "\n" )
 	}
-	}	
-	
+	}
+
 #=================================
 # now I want to temporarily save this ..
   in.Data$AB.distance<-c(in.Data$AB.distance, AB.distance)
@@ -428,7 +438,7 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
 	# outlier detection 10
 	# oulier detection
 	#if (AB.distance>(AC.distance2*1.5) | (abs(Dif.ang)<90 & AB.distance>50)) {
-	
+
 	#if ( steps.from.last>2 & ((AB.distance>50 & AB.distance>(AC.distance2*1.3))| (abs(Dif.ang)<90))) {
 	if ( steps.from.last>2 & ((AB.distance>50 & AB.distance>(AC.distance2*1.3))| (AB.distance>AC.distance2 & abs(Dif.ang)<100))) {
 	steps.from.last=0
@@ -440,27 +450,27 @@ pf.run.parallel.SO.resample<-function(in.Data, threads=2, nParticles=1e6, known.
 	# ok and now I have to change the resample to t-1
 	}
 	}
-	
-	
+
+
     #=====================================================
     # here is the change from 1.6 - Adding cumulative weights now..
 	# and this came back at the version 3.2!
     #Current.Weights.with.Prev.mat<-cbind(Weights.stack, Current.Weights)
-    
+
 	#rowProds <- function(a) exp(rowMeans(log(a)))
     rowProds <- function(a) exp(rowSums(log(a)))
-	
+
 	#Current.Weights.with.Prev<-	pmax(rowProds(Current.Weights.with.Prev.mat), 1e-323)
-	
+
 	if (Time.Period != total_length) {
-	   	# here is the place - I'll check weights without use of the last stage information! 
+	   	# here is the place - I'll check weights without use of the last stage information!
      	Current.Weights.with.Prev<-	pmax(rowProds(Weights.stack), 1e-323)
     } else {
 	    Current.Weights.with.Prev<-	pmax(rowProds(cbind(Weights.stack, Current.Weights)) , 1e-323)
 	}
 	#
     #================================================================
-    # ver 1.7. 
+    # ver 1.7.
     # ADAPTIVE RESAMPLING
     if (adaptive.resampling!=1) {
       ESS<-(sum(Current.Weights.with.Prev)^2)/sum((Current.Weights.with.Prev)^2)
@@ -469,17 +479,17 @@ if (is.na(ESS)) {
 	ESS=1
 	Current.Weights.with.Prev.mat<-cbind(Weights.stack, Current.Weights)
 	save(Current.Weights.with.Prev, Current.Weights.with.Prev.mat, Current.Weights, file="tmp.RData")
-	}		
+	}
     } else {
       ESS<-1
     }
-    if ((ESS<(nParticles*adaptive.resampling) & Time.Period>1) | Time.Period == nrow(in.Data$Indices$Main.Index)) {	
+    if ((ESS<(nParticles*adaptive.resampling) & Time.Period>1) | Time.Period == nrow(in.Data$Indices$Main.Index)) {
 	  if (length(unique(Current.Weights.with.Prev))==1) Current.Weights.with.Prev<-rep(1, nParticles)
 	  Rows<-try(sample.int(nParticles, replace = TRUE, prob = Current.Weights.with.Prev))
 			#if (class(Rows)=="try-error") {
-			#	print(Current.Weights.with.Prev) 
+			#	print(Current.Weights.with.Prev)
 			#	print(Rows)
-			#	stop("weird..\n")														 
+			#	stop("weird..\n")
 		#}#
 		#}#
       ResampleCount<-ResampleCount+1
@@ -495,10 +505,10 @@ if (is.na(ESS)) {
     #=====================================================
     #               Smoothing
     #====================================================
-    
+
     #======================================================
     # start OF SMOOTHING POINTS ESTIMATION
-    
+
     #  ==================================
     # ver. 1.8 - now use one function for all particle propagations:
     #	cat("  smoothing new particles")
@@ -506,17 +516,17 @@ if (is.na(ESS)) {
     #	New.Particles.MH<-propagate.particles(Last.Particles= Results.stack[,ncol(Results.stack)], Current.Proposal=Current.Proposal, parallel=parallel, Parameters=Parameters, mycl=mycl)
     #
     #	Current.Phys.Weights.MH<-in.Data$Spatial$Phys.Mat[New.Particles.MH,Time.Period]
-    #	
+    #
     #   if (!is.na(k) & Time.Period > 1) {
     #	  Angles.probs<-get.directional.weights(in.Data, Results.stack[,ncol(Results.stack)-1], Results.stack[,ncol(Results.stack)], New.Particles.MH, k, parallel, mycl, D.kappa)
     #      Current.Weights.MH<- Current.Phys.Weights.MH*Angles.probs
     #    }
     #    else {Current.Weights.MH<-Current.Phys.Weights.MH*D.kappa}
-    
-    #   end of smoothing estimation    
+
+    #   end of smoothing estimation
     #============================================
     #============================================
-    
+
     # now I need to compare resampled results with new resuklts
     #according to MH
     #	v<-runif(nParticles)
@@ -528,32 +538,32 @@ if (is.na(ESS)) {
     #	New.weights<-Current.Weights.MH
     #	New.weights[Eq]<-Current.Weights[Rows][Eq]
     #	cat("smoothed ", nParticles-sum(Eq), "Particles \n")
-    
+
     #============================================
     # this line is needed instead of all MH stuff
     Accepted.Particles<-New.Particles[Rows]
-    
+
     #All.results<-paste(All.results, Accepted.Particles, sep=".")
     ## adding points to the results matrix
     Results.stack<-cbind(Results.stack, Accepted.Particles)
     #==============================================================
     # 1.6
     Weights.stack<-cbind(Weights.stack, New.weights)
-    
+
     #Prev.Weights<-(Prev.Weights[Rows]) * New.weights
     #Prev.Weights<-Prev.Weights/mean(Prev.Weights)
     # end of 1.6 addition
     #===================================================
-    
+
     #Last.Last.Particles<-Last.Particles[Rows]
     #Last.Particles<-Accepted.Particles
-    
+
     #	if (Time.Period==2) Particles.at.2<-Accepted.Particles
     #	if (Time.Period>2) {
     #		Particles.at.2<-Particles.at.2[Rows]
     message("   unique P in point leaving stack", length(unique(Results.stack[,1])), "\n")
     #	}
-    
+
     if (Time.Period<=L) message("creating stack\n")
 	if (Time.Period==L) 	Points<-vector(mode = "list")
     if (Time.Period>L) {
@@ -579,11 +589,11 @@ message("******************\n")
   #####################################
   #save(All.results, file="All.results.usmoothed.RData")
   # now we need to add final point!
-  
+
   if (known.last) {
     Results.stack<-pf.final.smoothing(in.Data, Results.stack, precision.sd=precision.sd, nParticles=nParticles, last.particles=Results.stack[,ncol(Results.stack)])
   }
-  
+
   if (!is.list(Points)) Points<-vector(mode = "list")
   # and here we need to add a thing that will finish All.results and Trans from the points that are still in the stack
   message("adding last points form the stack to the resutls\n")
@@ -602,7 +612,7 @@ message("******************\n")
       Trans[[length(Trans)+1]]<-get.transition.rle(Results.stack[,rest], Results.stack[,rest+1])
     }
   }
-  #if (parallel)   parallel::clusterEvalQ(mycl, rm(Parameters)) 
+  #if (parallel)   parallel::clusterEvalQ(mycl, rm(Parameters))
   #if (length(existing.cluster)==1) parallel::stopCluster(cl = mycl)
   if (sink2file) sink()
   tmp.results<-list(AB.distance=in.Data$AB.distance, AC.distance2=in.Data$AC.distance2, Dif.ang=in.Data$Dif.ang)
@@ -613,13 +623,13 @@ message("******************\n")
 
 get.coordinates.PF<-function(Points, in.Data, add.jitter=FALSE) {
   #library("aspace")
-  # this function will extract point coordinates from the output matrix.. 
+  # this function will extract point coordinates from the output matrix..
   # the question is do we need only mean and sd or also median and quantiles?
   # I will start from mean and SD
   #plot(c(min(in.Data$Spatial$Grid[,1]),max(in.Data$Spatial$Grid[,1])), c(min(in.Data$Spatial$Grid[,2]),max(in.Data$Spatial$Grid[,2])), type="n")
   #log <- capture.output({
   #  Means=aspace::calc_box(id=1,  points=in.Data$Spatial$Grid[inverse.rle(Points[[1]]),1:2])
-  # 
+  #
   #for (i in 2:length(Points)) {
   #  Means[i,]=aspace::calc_box(id=i,  points=in.Data$Spatial$Grid[inverse.rle(Points[[i]]), 1:2])
     #plot_box(plotnew=FALSE, plotpoints=FALSE)
@@ -627,22 +637,22 @@ get.coordinates.PF<-function(Points, in.Data, add.jitter=FALSE) {
 	#})
    if (length(in.Data$Results)==0) in.Data$Results<-list()
   #in.Data$Results$Final.Means<-Means
-  
+
   #############
   # new part for medians
   message("estimating quantiles for positions\n")
-	
+
 		# check whether Grid was over dateline:
 	overdateline<-ifelse(attr(in.Data$Spatial$Grid, 'left')>	attr(in.Data$Spatial$Grid, 'right'), TRUE, FALSE)
 
-	
+
 	Quantiles<-c()
 	CIntervals<-c()
 	cur_Grid<-in.Data$Spatial$Grid
 	if (overdateline) cur_Grid[cur_Grid[,1]<0,1]<-cur_Grid[cur_Grid[,1]<0,1]+360
-	
+
 	for (i in 1:length(Points)) {
-	
+
 
 	#Mode_cur<-	cur_Grid[Points[[i]]$values[which.max(Points[[i]]$lengths)],1]
 	#cur_Grid[,1]<-ifelse(cur_Grid[,1]<Mode_cur-180, cur_Grid[,1]+360, cur_Grid[,1])
@@ -670,18 +680,18 @@ get.coordinates.PF<-function(Points, in.Data, add.jitter=FALSE) {
 	names(Quantiles)<-gsub("\\s","", names(Quantiles))
 	names(Quantiles)<-gsub("1","F", names(Quantiles))
 	names(Quantiles)<-gsub("3","T", names(Quantiles))
-	
+
 	message("adding 95% credibility intervals to medians\n")
 	Quantiles$LCI.lat<-CIntervals[,1]
 	Quantiles$UCI.lat<-CIntervals[,2]
 	Quantiles$LCI.lon<-CIntervals[,3]
 	Quantiles$UCI.lon<-CIntervals[,4]
-	  
+
 	if (overdateline) {
 	   Columns<-c(8:15, 19, 20)
        for (i in Columns) {
            Quantiles[Quantiles[,i]>180,i]<-Quantiles[Quantiles[,i]>180,i]-360
-       }	   
+       }
 	}
 	if (nrow(Quantiles)==nrow(in.Data$Indices$Matrix.Index.Table)) {
 	   Quantiles<-cbind(Quantiles, time=in.Data$Indices$Matrix.Index.Table$time)
@@ -689,7 +699,7 @@ get.coordinates.PF<-function(Points, in.Data, add.jitter=FALSE) {
 	   Quantiles<-cbind(Quantiles[-1,], time=in.Data$Indices$Matrix.Index.Table$time)
 	}
 	in.Data$Results$Quantiles<-Quantiles
-	
+
     in.Data$Results$Points.rle<-Points
   return(in.Data)
 }
@@ -697,7 +707,7 @@ get.coordinates.PF<-function(Points, in.Data, add.jitter=FALSE) {
 
 estimate.movement.parameters<-function(Trans, in.Data, fixed.parameters=NA, a=45, b=500, parallel=FALSE, existing.cluster=NULL, estimatetruncnorm=FALSE, nParticles=1e6) {
   mycl=existing.cluster
-  
+
   # old name update.proposal.PF
   # main function for proposal update
   # from the version 1.5 this function will do estimation of distance and it's SD..
@@ -720,7 +730,7 @@ estimate.movement.parameters<-function(Trans, in.Data, fixed.parameters=NA, a=45
     #             in.Data$Spatial$Grid[x%%1e5, c(1,2), drop=FALSE],
     #             longlat=TRUE,
     #             diagonal=TRUE)
-    
+
     sf::st_distance(sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[x%/%1e5, c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326),
                 sf::st_as_sf(as.data.frame(in.Data$Spatial$Grid[x%%1e5, c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326),
                 by_element = TRUE)/1000
@@ -730,20 +740,20 @@ estimate.movement.parameters<-function(Trans, in.Data, fixed.parameters=NA, a=45
   }
   message("   estimating directions\n")
   #ok, now we want to get directions
-  
+
   Directions<-Trans
   for (i in 1:length(Trans)) {
     Movement_Points<-matrix(c(Trans[[i]]$values%/%1e5, Trans[[i]]$values%%1e5), ncol=2)
     Directions[[i]]$values<-apply(Movement_Points, 1, FUN= dir_fun, in.Data)
   }
   message("   estimating mean directions and kappas\n")
-  
+
   Mean.Directions<-unlist(lapply(Directions, FUN=function(x) CircStats::circ.mean(circular::circular(inverse.rle(list(lengths=x$lengths[!is.na(x$values)], values=x$values[!is.na(x$values)]*pi/180))))*180/pi))
   #plot(Mean.Directions)
   message("   estimating kappas\n") #CircStats::est.kappa
   Kappas<-unlist(lapply(Directions, FUN=function(x) CircStats::est.kappa(inverse.rle(list(lengths=x$lengths[!is.na(x$values)], values=x$values[!is.na(x$values)]*pi/180)))))
-  
-  
+
+
   # now we want to get mean distance
   message("   estimating mean dists\n")
   #
@@ -755,8 +765,8 @@ estimate.movement.parameters<-function(Trans, in.Data, fixed.parameters=NA, a=45
   # ok, now we want to get parameters for distances
   #
   Probability.of.migration<-unlist(lapply(Distances, FUN=function(x) sum(x$lengths[x$values!=0])))/nParticles
-  
-  ## 
+
+  ##
     if (estimatetruncnorm) {
   Mean.and.Sigma<-lapply(Distances, FUN=function(x)  mu.sigma.truncnorm(inverse.rle(list(lengths=x$lengths[x$values!=0], values=x$values[x$values!=0])), a=a, b=b))
   #}
@@ -778,10 +788,10 @@ estimate.movement.parameters<-function(Trans, in.Data, fixed.parameters=NA, a=45
   # create new proposal from the posteriors
   #New.Matrix.Index.Table<-data.frame(Direction=Mean.Directions, M.mean=Mean.Dists, M.sd=Mean.SD, Decision=Probability.of.migration, Kappa=Kappas)
   ################
-  
+
   Movement.results<-in.Data$Indices$Matrix.Index.Table
   #all.arrays.object<-in.Data
-  
+
   #----------------
   # actually I do not want to update this - so I rather save it outside if possible..
   Movement.results$Decision<-Probability.of.migration
@@ -792,19 +802,19 @@ estimate.movement.parameters<-function(Trans, in.Data, fixed.parameters=NA, a=45
   Movement.results$M.medians<-Median.Dists
   Movement.results$Mean2report<-Mean2report
   Movement.results$SD2report<-SD2report
-  
+
   #all.arrays.object$Indices$Matrix.Index.Table<-New.Matrix.Index.Table
-  
+
   #all.arrays.object$Indices$Main.Index$Biol.Prev=1:(nrow(all.arrays.object$Indices$Matrix.Index.Table))
-    
+
   if (is.list(fixed.parameters)) {
     # this part can be moved upper not to estimate parametrs in case they are fixed.
     if ("M.sd" %in% names(fixed.parameters)) Movement.results$M.sd<-fixed.parameters$M.sd
-    
+
     if ("M.mean" %in% names(fixed.parameters)) Movement.results$M.mean<-fixed.parameters$M.mean
-    
+
     if ("Kappa" %in% names(fixed.parameters)) Movement.results$Kappa<-fixed.parameters$Kappa
-    
+
     if ("Direction" %in% names(fixed.parameters)) Movement.results$Direction<-fixed.parameters$Direction
   }
   #all.arrays.object$Indices$Main.Index$Biol.Next=2:(nrow(all.arrays.object$Indices$Matrix.Index.Table))
@@ -844,34 +854,34 @@ coords.aeqd.jitter <- function(coords, r, n)
 # made on te basis of this:
 #"http://gis.stackexchange.com/questions/121489/1km-circles-around-lat-long-points-in-many-places-in-world"
  stopifnot(length(coords) == 2)
-  
+
   	#p = sp::SpatialPoints(matrix(coords, ncol=2), proj4string=sp::CRS("+proj=longlat +datum=WGS84"))
-  	p = sf::st_as_sf(as.data.frame(matrix(coords, ncol=2)), coords=c('V1','V2'),crs = 4326)  
-  	
+  	p = sf::st_as_sf(as.data.frame(matrix(coords, ncol=2)), coords=c('V1','V2'),crs = 4326)
+
      # aeqd <- sprintf("+proj=aeqd +lat_0=%s +lon_0=%s +x_0=0 +y_0=0",
      #                 p@coords[[2]], p@coords[[1]])
      aeqd <- sprintf("+proj=aeqd +lat_0=%s +lon_0=%s +x_0=0 +y_0=0",
-                     sf::st_coordinates(p)[[2]], sf::st_coordinates(p)[[1]])  
-    
+                     sf::st_coordinates(p)[[2]], sf::st_coordinates(p)[[1]])
+
     #projected <- sp::spTransform(p, sp::CRS(aeqd))
     projected <- sf::st_transform(p,sf::st_crs(aeqd))
-    
+
     #buffered <- rgeos::gBuffer(projected, width=r, byid=TRUE)
     buffered <- sf::st_buffer(projected, dist = r)
-    
+
      # lambert <- sprintf("+proj=laea +lat_0=%s +lon_0=%s +x_0=0 +y_0=0",
      #                 p@coords[[2]], p@coords[[1]])
      lambert <- sprintf("+proj=laea +lat_0=%s +lon_0=%s +x_0=0 +y_0=0",
-                     sf::st_coordinates(p)[[2]], sf::st_coordinates(p)[[1]])  
-    
+                     sf::st_coordinates(p)[[2]], sf::st_coordinates(p)[[1]])
+
 	#buffered_eqarea <- sp::spTransform(buffered, sp::CRS(lambert))
 	buffered_eqarea <- sf::st_transform(buffered,sf::st_crs(lambert))
-	
-	
+
+
 	#random_points<-sp::spsample(buffered_eqarea,n=n,type="random")
 	random_points <- sf::st_sample(buffered_eqarea, size = n, type = "random")
-	
-	# if (is.null(random_points)) random_points<-sp::spsample(buffered_eqarea,n=n,type="random", iter=40) 
+
+	# if (is.null(random_points)) random_points<-sp::spsample(buffered_eqarea,n=n,type="random", iter=40)
 	if (is.null(random_points)){
 	  # Loop until you have the desired number of samples
 	  counter<-1
@@ -883,11 +893,11 @@ coords.aeqd.jitter <- function(coords, r, n)
 
 	  }
 
-	
+
 	if (is.null(random_points)) random_points<-p
     #sp::spTransform(random_points, p@proj4string)
     sf::st_transform(random_points, crs = sf::st_crs(p))
-    
+
 }
 
 # wrapper for jitter
@@ -904,7 +914,7 @@ get.coords.jitter<-function(in.Data) {
 	if( !inherits(tmp, "try-error")) {
 	#jitter_coords<-t(sapply(tmp, sp::coordinates))
 	jitter_coords<-t(sapply(tmp, sf::st_coordinates))
-	
+
 	}
 	return(jitter_coords)
 }
@@ -914,10 +924,10 @@ get.LL.PF<-function(in.Data, data) {
   # needed to estimate log likelihood of the optimization
   L=0
   if (is.list(data)) {
-  for (i in 1:(length(data)-1)) { 
+  for (i in 1:(length(data)-1)) {
       L=L+log(mean(in.Data$Spatial$Phys.Mat[inverse.rle(data[[i]]),i]))
 	  }
-  } else{ 
+  } else{
     for (i in 1:(dim(data)[2]-1)) {
     L=L+log(mean(in.Data$Spatial$Phys.Mat[data[,i],i]))
 	}
@@ -940,7 +950,7 @@ pf.par.internal<-function(x, Current.Proposal) {
 flightr.dvonmises<-function(x, mykap) {
   return(as.numeric(suppressWarnings(circular::dvonmises(x[[2]], mu=x[[1]], kappa=mykap))))}
 
-  
+
 pf.final.smoothing<-function(in.Data, results.stack, precision.sd=25, nParticles=1e6, last.particles=NA) {
   # this function simply resamples final points proportionally to the distance to known finish.
   Final.point.real<-in.Data$Spatial$stop.point
@@ -971,13 +981,13 @@ pf.final.smoothing<-function(in.Data, results.stack, precision.sd=25, nParticles
 dir_fun<-function(x, in.Data) {
 	  geosphere::bearing(in.Data$Spatial$Grid[x[[1]], c(1,2), drop=FALSE], in.Data$Spatial$Grid[x[[2]], c(1,2), drop=FALSE])
 }
-    
+
 dist.fun<-function(x, Result) {
-  # sp::spDists(Result$Spatial$Grid[x%/%1e5, c(1,2), drop=FALSE], 
+  # sp::spDists(Result$Spatial$Grid[x%/%1e5, c(1,2), drop=FALSE],
   #             Result$Spatial$Grid[x%%1e5, c(1,2), drop=FALSE],
-  #             longlat=TRUE, 
+  #             longlat=TRUE,
   #             diagonal=TRUE)
-  sf::st_distance(sf::st_as_sf(as.data.frame(Result$Spatial$Grid[x%/%1e5, c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326), 
+  sf::st_distance(sf::st_as_sf(as.data.frame(Result$Spatial$Grid[x%/%1e5, c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326),
                   sf::st_as_sf(as.data.frame(Result$Spatial$Grid[x%%1e5, c(1,2), drop=FALSE]),coords=c('lon','lat'),crs=4326),
                   by_element = TRUE)/1000
 }

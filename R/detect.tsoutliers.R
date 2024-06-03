@@ -130,7 +130,12 @@ on.exit(graphics::par(oldpar))
 
 if (!is.null(Threads)) {
 	message("making cluster\n")
-	mycl <- parallel::makeCluster(Threads, cluster.type="PSOCK")
+  if (identical(cluster.type, "SOCK")) {
+    hosts <- rep("localhost",Threads)
+    mycl <- parallel::makeCluster(hosts, type=cluster.type)
+  } else {
+    mycl <- parallel::makeCluster(Threads, type=cluster.type)
+  }
 	tmp<-parallel::clusterSetRNGStream(mycl)
     tmp<-parallel::clusterExport(mycl,c("calibration", "Proc.data"), envir=environment())
 	message("estimating dusk errors projection on equator\n")
