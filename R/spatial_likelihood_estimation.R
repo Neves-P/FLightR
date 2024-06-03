@@ -21,6 +21,7 @@ if (is.character(calibration)) calibration=get("calibration")
 Grid<-all.out$Spatial$Grid
 if (threads!=1) {
    cat("making cluster\n")
+   message("Cluster type ", cluster.type)
    mycl <- parallel::makeCluster(threads, type=cluster.type)
    tmp<-parallel::clusterSetRNGStream(mycl)
    tmp<-parallel::clusterExport(mycl,c("Twilight.time.mat.dawn", "Twilight.time.mat.dusk", "Twilight.log.light.mat.dawn", "Twilight.log.light.mat.dusk", "Grid", "calibration"), envir=environment())
