@@ -21,17 +21,10 @@ if (is.character(calibration)) calibration=get("calibration")
 Grid<-all.out$Spatial$Grid
 if (threads!=1) {
    cat("making cluster\n")
-   message("Cluster type ", cluster.type)
    if (identical(cluster.type, "SOCK")) {
    hosts <- rep("localhost",threads)
-   message("threads: ", threads)
-   message("length(hosts: ", length(hosts))
-   cat("making cluster localhost\n")
-   message("hosts: ", hosts)
    mycl <- parallel::makeCluster(hosts, type=cluster.type)
    } else {
-     cat("making cluster threads\n")
-     message("hosts: ", threads)
    mycl <- parallel::makeCluster(threads, type=cluster.type)
    }
    tmp<-parallel::clusterSetRNGStream(mycl)

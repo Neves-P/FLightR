@@ -320,11 +320,8 @@ make.prerun.object<-function(Proc.data, Grid, start, end=start, Calibration, thr
 
    if (threads!=1 ) {
       Possible.threads<-parallel::detectCores()
-      message("threads: ", threads)
-      message("Possible.threads: ", Possible.threads)
       if (threads<=0) Threads<-max(Possible.threads+threads, 1)
       if (threads>0) Threads<-min(Possible.threads,threads)
-      message("Threads: ", Threads)
    } else {
       Threads<-1
    }
